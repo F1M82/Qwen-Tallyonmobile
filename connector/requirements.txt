@@ -1,0 +1,14 @@
+# HTTP Client
+httpx==0.26.0
+
+# WebSocket
+websockets==12.0
+
+# Environment
+python-dotenv==1.0.0
+
+# Packaging (for building .exe)
+pyinstaller==6.3.0
+
+# Utilities
+python-dateutil==2.8.2
