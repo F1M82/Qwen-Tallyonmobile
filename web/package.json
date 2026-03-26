@@ -1,0 +1,37 @@
+# FILE: web/package.json
+
+{
+  "name": "taxmind-web",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.0",
+    "@tanstack/react-query": "^5.17.0",
+    "axios": "^1.6.5",
+    "zustand": "^4.4.7",
+    "recharts": "^2.10.3",
+    "@tanstack/react-table": "^8.11.0",
+    "react-hook-form": "^7.49.0",
+    "zod": "^3.22.4",
+    "@hookform/resolvers": "^3.3.3",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.32",
+    "autoprefixer": "^10.4.16"
+  }
+}
