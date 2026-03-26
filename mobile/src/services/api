@@ -1,0 +1,73 @@
+// src/hooks/useVouchers.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { voucherAPI } from '../services/api';
+
+export function useVouchers(params?: any) {
+  return useQuery({
+    queryKey: ['vouchers', params],
+    queryFn: () => voucherAPI.list(params),
+  });
+}
+
+export function useVoucher(id: string) {
+  return useQuery({
+    queryKey: ['voucher', id],
+    queryFn: () => voucherAPI.get(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateVoucher() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: voucherAPI.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vouchers'] });
+    },
+  });
+}
+
+// src/hooks/useReconciliation.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { reconciliationAPI } from '../services/api';
+
+export function useReconciliation(id: string) {
+  return useQuery({
+    queryKey: ['reconciliation', id],
+    queryFn: () => reconciliationAPI.get(id),
+    enabled: !!id,
+  });
+}
+
+export function useUploadReconciliation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ partyId, file }: { partyId: string; file: any }) =>
+      reconciliationAPI.upload(partyId, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reconciliations'] });
+    },
+  });
+}
+
+// src/hooks/useVoiceEntry.ts
+import { useMutation } from '@tanstack/react-query';
+import { voiceAPI } from '../services/api';
+
+export function useVoiceEntry() {
+  return useMutation({
+    mutationFn: voiceAPI.entry,
+  });
+}
+
+// src/hooks/useInvoiceScan.ts
+import { useMutation } from '@tanstack/react-query';
+import { invoiceAPI } from '../services/api';
+
+export function useInvoiceScan() {
+  return useMutation({
+    mutationFn: invoiceAPI.scan,
+  });
+}
