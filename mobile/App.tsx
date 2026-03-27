@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -19,6 +19,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import DashboardScreen from './src/screens/DashboardScreen';
 import VoucherEntryScreen from './src/screens/VoucherEntryScreen';
+import VoucherListScreen from './src/screens/VoucherListScreen';
 import ReconciliationScreen from './src/screens/ReconciliationScreen';
 import ReportsScreen from './src/screens/ReportsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -27,7 +28,6 @@ import InvoiceScanScreen from './src/screens/InvoiceScanScreen';
 import PaymentDetectionScreen from './src/screens/PaymentDetectionScreen';
 import PartyListScreen from './src/screens/PartyListScreen';
 import PartyDetailScreen from './src/screens/PartyDetailScreen';
-import VoucherListScreen from './src/screens/VoucherListScreen';
 import VoucherDetailScreen from './src/screens/VoucherDetailScreen';
 import ComplianceScreen from './src/screens/ComplianceScreen';
 import BankReconciliationScreen from './src/screens/BankReconciliationScreen';
@@ -40,6 +40,7 @@ import { RootStackParamList, BottomTabParamList } from './src/types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -59,8 +60,6 @@ Notifications.setNotificationHandler({
 });
 
 function BottomTabNavigator() {
-  const { user } = useAuth();
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -88,31 +87,11 @@ function BottomTabNavigator() {
         headerShown: false,
       })}
     >
-      <Tab.Screen 
-        name="Dashboard" 
-        component={DashboardScreen}
-        options={{ title: 'Home' }}
-      />
-      <Tab.Screen 
-        name="Vouchers" 
-        component={VoucherListScreen}
-        options={{ title: 'Vouchers' }}
-      />
-      <Tab.Screen 
-        name="Reconciliation" 
-        component={ReconciliationScreen}
-        options={{ title: 'Reconcile' }}
-      />
-      <Tab.Screen 
-        name="Reports" 
-        component={ReportsScreen}
-        options={{ title: 'Reports' }}
-      />
-      <Tab.Screen 
-        name="Settings" 
-        component={SettingsScreen}
-        options={{ title: 'Settings' }}
-      />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} options={{ title: 'Home' }} />
+      <Tab.Screen name="Vouchers" component={VoucherListScreen} options={{ title: 'Vouchers' }} />
+      <Tab.Screen name="Reconciliation" component={ReconciliationScreen} options={{ title: 'Reconcile' }} />
+      <Tab.Screen name="Reports" component={ReportsScreen} options={{ title: 'Reports' }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
     </Tab.Navigator>
   );
 }
@@ -121,7 +100,7 @@ function AppNavigator() {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    return null; // Or loading screen
+    return null; // Could be replaced with a SplashScreen
   }
 
   return (
@@ -130,42 +109,24 @@ function AppNavigator() {
         {isAuthenticated ? (
           <>
             <Stack.Screen name="Main" component={BottomTabNavigator} />
-            <Stack.Screen 
-              name="VoiceEntry" 
-              component={VoiceEntryScreen}
-              options={{ presentation: 'modal' }}
-            />
-            <Stack.Screen 
-              name="InvoiceScan" 
-              component={InvoiceScanScreen}
-              options={{ presentation: 'modal' }}
-            />
-            <Stack.Screen 
-              name="PaymentDetection" 
-              component={PaymentDetectionScreen}
-              options={{ presentation: 'modal' }}
-            />
+            <Stack.Screen name="VoiceEntry" component={VoiceEntryScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="InvoiceScan" component={InvoiceScanScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="PaymentDetection" component={PaymentDetectionScreen} options={{ presentation: 'modal' }} />
             <Stack.Screen name="PartyList" component={PartyListScreen} />
             <Stack.Screen name="PartyDetail" component={PartyDetailScreen} />
+            <Stack.Screen name="VoucherEntry" component={VoucherEntryScreen} options={{ presentation: 'modal' }} />
+            <Stack.Screen name="VoucherList" component={VoucherListScreen} />
             <Stack.Screen name="VoucherDetail" component={VoucherDetailScreen} />
             <Stack.Screen name="Compliance" component={ComplianceScreen} />
             <Stack.Screen name="BankReconciliation" component={BankReconciliationScreen} />
             <Stack.Screen name="GSTReconciliation" component={GSTReconciliationScreen} />
             <Stack.Screen name="AuditTrail" component={AuditTrailScreen} />
-            <Stack.Screen 
-              name="TaxMindChat" 
-              component={TaxMindChatScreen}
-              options={{ presentation: 'modal' }}
-            />
+            <Stack.Screen name="TaxMindChat" component={TaxMindChatScreen} options={{ presentation: 'modal' }} />
           </>
         ) : (
           <>
             <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen 
-              name="Register" 
-              component={RegisterScreen}
-              options={{ presentation: 'modal' }}
-            />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ presentation: 'modal' }} />
           </>
         )}
       </Stack.Navigator>
@@ -174,27 +135,24 @@ function AppNavigator() {
 }
 
 export default function App() {
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>(undefined);
-
   useEffect(() => {
-    // Register for push notifications
+    // Register for push notifications on real device only
     if (Device.isDevice) {
       Notifications.requestPermissionsAsync();
     }
 
-    // Listen for notifications
+    // Notification received while app is open
     const notificationListener = Notifications.addNotificationReceivedListener(
-      (notification) => {
-        setNotification(notification);
-        // Handle notification (e.g., navigate to specific screen)
-      }
+      (_notification) => {
+        // Could dispatch to a notification store or show in-app banner
+      },
     );
 
-    // Listen for notification taps
+    // Notification tapped
     const responseListener = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        // Handle notification tap (e.g., navigate to specific screen)
-      }
+      (_response) => {
+        // Navigate to relevant screen based on notification data
+      },
     );
 
     return () => {

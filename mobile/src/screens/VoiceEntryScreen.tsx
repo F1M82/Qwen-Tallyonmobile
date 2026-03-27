@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -21,7 +21,7 @@ export default function VoiceEntryScreen() {
   const [transcript, setTranscript] = useState('');
   const [parsedData, setParsedData] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   const mutation = useVoiceEntry();
 
   async function startRecording() {
@@ -34,13 +34,13 @@ export default function VoiceEntryScreen() {
 
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      const { recording: rec } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
 
-      setRecording(recording);
+      setRecording(rec);
       setIsRecording(true);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to start recording');
     }
   }
@@ -55,12 +55,7 @@ export default function VoiceEntryScreen() {
     if (uri) {
       setIsProcessing(true);
       try {
-        const file = {
-          uri,
-          type: 'audio/mp4',
-          name: 'voice-entry.m4a',
-        };
-
+        const file = { uri, type: 'audio/mp4', name: 'voice-entry.m4a' };
         const response = await mutation.mutateAsync(file);
         setTranscript(response.data.transcript);
         setParsedData(response.data.parsed);
@@ -105,15 +100,9 @@ export default function VoiceEntryScreen() {
             onPress={isRecording ? stopRecording : startRecording}
             disabled={isProcessing}
           >
-            <Ionicons
-              name={isRecording ? 'stop' : 'mic'}
-              size={40}
-              color="#fff"
-            />
+            <Ionicons name={isRecording ? 'stop' : 'mic'} size={40} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.recordText}>
-            {isRecording ? 'Tap to Stop' : 'Tap to Speak'}
-          </Text>
+          <Text style={styles.recordText}>{isRecording ? 'Tap to Stop' : 'Tap to Speak'}</Text>
           {isProcessing && <ActivityIndicator size="large" color="#2563EB" />}
         </View>
 
@@ -162,17 +151,11 @@ export default function VoiceEntryScreen() {
       {/* Action Buttons */}
       {parsedData && (
         <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => setParsedData(null)}
-          >
+          <TouchableOpacity style={styles.editButton} onPress={() => setParsedData(null)}>
             <Ionicons name="pencil-outline" size={20} color="#2563EB" />
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.postButton}
-            onPress={handlePostVoucher}
-          >
+          <TouchableOpacity style={styles.postButton} onPress={handlePostVoucher}>
             <Ionicons name="checkmark-circle" size={20} color="#fff" />
             <Text style={styles.postButtonText}>Post to Tally</Text>
           </TouchableOpacity>
@@ -183,10 +166,7 @@ export default function VoiceEntryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -196,19 +176,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  recordingSection: {
-    alignItems: 'center',
-    padding: 40,
-  },
+  title: { fontSize: 20, fontWeight: '600', color: '#111827' },
+  content: { flex: 1, padding: 20 },
+  recordingSection: { alignItems: 'center', padding: 40 },
   recordButton: {
     width: 100,
     height: 100,
@@ -218,33 +188,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  recordButtonActive: {
-    backgroundColor: '#DC2626',
-  },
-  recordText: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  resultSection: {
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 12,
-  },
-  transcriptBox: {
-    backgroundColor: '#F3F4F6',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  transcriptText: {
-    fontSize: 15,
-    color: '#374151',
-    fontStyle: 'italic',
-  },
+  recordButtonActive: { backgroundColor: '#DC2626' },
+  recordText: { fontSize: 16, color: '#6B7280' },
+  resultSection: { marginTop: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 12 },
+  transcriptBox: { backgroundColor: '#F3F4F6', padding: 16, borderRadius: 12, marginBottom: 16 },
+  transcriptText: { fontSize: 15, color: '#374151', fontStyle: 'italic' },
   entryCard: {
     backgroundColor: '#F9FAFB',
     padding: 16,
@@ -253,19 +202,9 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     gap: 12,
   },
-  entryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  entryLabel: {
-    fontSize: 14,
-    color: '#6B7280',
-  },
-  entryValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#111827',
-  },
+  entryRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  entryLabel: { fontSize: 14, color: '#6B7280' },
+  entryValue: { fontSize: 14, fontWeight: '600', color: '#111827' },
   actionButtons: {
     flexDirection: 'row',
     padding: 20,
@@ -284,11 +223,7 @@ const styles = StyleSheet.create({
     borderColor: '#2563EB',
     gap: 8,
   },
-  editButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2563EB',
-  },
+  editButtonText: { fontSize: 16, fontWeight: '600', color: '#2563EB' },
   postButton: {
     flex: 2,
     flexDirection: 'row',
@@ -299,9 +234,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#2563EB',
     gap: 8,
   },
-  postButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
+  postButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 });

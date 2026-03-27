@@ -15,13 +15,14 @@ Usage:
 """
 
 import asyncio
-import httpx
-import websockets
 import json
 import os
 import sys
 from datetime import datetime
 from typing import Optional, Dict, Any
+
+import httpx
+import websockets
 from dotenv import load_dotenv
 
 from tally_client import TallyClient
@@ -36,20 +37,27 @@ TALLY_HOST = os.getenv("TALLY_HOST", "localhost")
 TALLY_PORT = int(os.getenv("TALLY_PORT", "9000"))
 RECONNECT_DELAY = 5  # seconds
 
+
 class ConnectorAgent:
     """
     Desktop connector agent that maintains WebSocket connection
     with backend and executes Tally commands.
     """
-    
+
     def __init__(self):
         self.tally = TallyClient(TALLY_HOST, TALLY_PORT)
         self.backend = BACKEND_URL
-        self.ws_url = f"wss://{BACKEND_URL.replace('https', 'wss')}/ws/connector"
+        # Fix: proper protocol replacement — wss:// not wss://wss://
+        self.ws_url = (
+            BACKEND_URL
+            .replace("https://", "wss://")
+            .replace("http://", "ws://")
+            + "/ws/connector"
+        )
         self.company_id = COMPANY_ID
         self.is_running = True
         self.last_heartbeat = datetime.now()
-        
+
     async def run(self):
         """Main connection loop with auto-reconnect"""
         print(f"🔌 TaxMind Connector v1.0.0")
@@ -57,7 +65,7 @@ class ConnectorAgent:
         print(f"☁️  Backend: {self.backend}")
         print(f"🏢 Company: {self.company_id}")
         print(f"{'='*50}")
-        
+
         while self.is_running:
             try:
                 async with websockets.connect(
@@ -70,10 +78,10 @@ class ConnectorAgent:
                     ping_timeout=10,
                 ) as ws:
                     print(f"✅ Connected to TaxMind backend at {datetime.now().isoformat()}")
-                    
+
                     # Register this connector
                     await self.register_connector(ws)
-                    
+
                     # Main message loop
                     async for message in ws:
                         try:
@@ -89,42 +97,43 @@ class ConnectorAgent:
                                 "status": "error",
                                 "message": str(e)
                             }))
-                            
+
             except websockets.exceptions.ConnectionClosed:
+                # Fix: also sleep on graceful close, not just on error
                 print(f"⚠️  Connection closed at {datetime.now().isoformat()}")
+                print(f"🔄 Reconnecting in {RECONNECT_DELAY} seconds...")
+                await asyncio.sleep(RECONNECT_DELAY)
             except Exception as e:
                 print(f"❌ Connection error: {e}")
                 print(f"🔄 Reconnecting in {RECONNECT_DELAY} seconds...")
                 await asyncio.sleep(RECONNECT_DELAY)
-    
+
     async def register_connector(self, ws: websockets.WebSocketClientProtocol):
         """Register this connector with backend"""
         try:
-            # Test Tally connection
             tally_alive = await self.tally.ping()
-            
-            # Send registration
+
             await ws.send(json.dumps({
                 "type": "register",
                 "company_id": self.company_id,
                 "tally_running": tally_alive,
-                "tally_version": "TallyPrime 7.0",  # Can be detected dynamically
+                "tally_version": "TallyPrime 7.0",
                 "connector_version": "1.0.0",
                 "timestamp": datetime.now().isoformat()
             }))
-            
+
             print(f"📊 Tally Status: {'✅ Running' if tally_alive else '❌ Not Running'}")
-            
+
         except Exception as e:
             print(f"❌ Registration failed: {e}")
-    
+
     async def handle_command(self, cmd: Dict[str, Any]) -> Dict[str, Any]:
         """Execute command from backend and return response"""
         action = cmd.get("action")
         request_id = cmd.get("request_id")
-        
+
         print(f"⚡ Command: {action}")
-        
+
         try:
             if action == "get_ledger":
                 data = await self.tally.get_ledger(
@@ -132,52 +141,31 @@ class ConnectorAgent:
                     cmd.get("from_date"),
                     cmd.get("to_date")
                 )
-                return {
-                    "status": "ok",
-                    "request_id": request_id,
-                    "data": data
-                }
-            
+                return {"status": "ok", "request_id": request_id, "data": data}
+
             elif action == "get_all_ledgers":
                 ledgers = await self.tally.get_all_ledgers()
                 groups = await self.tally.get_all_groups()
-                return {
-                    "status": "ok",
-                    "request_id": request_id,
-                    "ledgers": ledgers,
-                    "groups": groups
-                }
-            
+                return {"status": "ok", "request_id": request_id, "ledgers": ledgers, "groups": groups}
+
             elif action == "post_voucher":
                 result = await self.tally.post_voucher(cmd.get("voucher"))
-                return {
-                    "status": "ok",
-                    "request_id": request_id,
-                    "result": result
-                }
-            
+                return {"status": "ok", "request_id": request_id, "result": result}
+
             elif action == "get_trial_balance":
                 data = await self.tally.get_trial_balance(
                     cmd.get("from_date"),
                     cmd.get("to_date")
                 )
-                return {
-                    "status": "ok",
-                    "request_id": request_id,
-                    "data": data
-                }
-            
+                return {"status": "ok", "request_id": request_id, "data": data}
+
             elif action == "get_outstanding":
                 data = await self.tally.get_outstanding(
                     cmd.get("party_type"),
                     cmd.get("as_of_date")
                 )
-                return {
-                    "status": "ok",
-                    "request_id": request_id,
-                    "data": data
-                }
-            
+                return {"status": "ok", "request_id": request_id, "data": data}
+
             elif action == "health_check":
                 is_alive = await self.tally.ping()
                 return {
@@ -186,32 +174,23 @@ class ConnectorAgent:
                     "tally_running": is_alive,
                     "timestamp": datetime.now().isoformat()
                 }
-            
+
             elif action == "sync_masters":
                 ledgers = await self.tally.get_all_ledgers()
                 groups = await self.tally.get_all_groups()
-                return {
-                    "status": "ok",
-                    "request_id": request_id,
-                    "ledgers": ledgers,
-                    "groups": groups
-                }
-            
+                return {"status": "ok", "request_id": request_id, "ledgers": ledgers, "groups": groups}
+
             else:
                 return {
                     "status": "error",
                     "request_id": request_id,
                     "message": f"Unknown action: {action}"
                 }
-        
+
         except Exception as e:
             print(f"❌ Command execution error: {e}")
-            return {
-                "status": "error",
-                "request_id": request_id,
-                "message": str(e)
-            }
-    
+            return {"status": "error", "request_id": request_id, "message": str(e)}
+
     def stop(self):
         """Stop the connector"""
         self.is_running = False
@@ -221,7 +200,7 @@ class ConnectorAgent:
 def main():
     """Entry point"""
     agent = ConnectorAgent()
-    
+
     try:
         asyncio.run(agent.run())
     except KeyboardInterrupt:

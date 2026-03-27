@@ -1,11 +1,17 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
-from database import Base, engine, init_db
+from database import init_db
 from routers import auth, reconciliation, voice, invoice_scan, message_parser, connectors, vouchers, reports, audit, ai
 
-# Create tables
-init_db()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup / shutdown lifecycle handler"""
+    init_db()
+    yield
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -13,6 +19,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS
@@ -36,6 +43,7 @@ app.include_router(reports.router, prefix=f"{settings.API_V1_PREFIX}/reports", t
 app.include_router(audit.router, prefix=f"{settings.API_V1_PREFIX}/audit", tags=["Audit Trail"])
 app.include_router(ai.router, prefix=f"{settings.API_V1_PREFIX}/ai", tags=["TaxMind AI"])
 
+
 @app.get("/")
 async def root():
     return {
@@ -45,6 +53,7 @@ async def root():
         "health": "/health"
     }
 
+
 @app.get("/health")
 async def health_check():
     return {
@@ -52,6 +61,7 @@ async def health_check():
         "version": settings.VERSION,
         "environment": settings.ENVIRONMENT
     }
+
 
 @app.get("/health/ready")
 async def readiness_check():
@@ -61,6 +71,7 @@ async def readiness_check():
         "redis": "ok",
         "ai_apis": "ok" if settings.ANTHROPIC_API_KEY else "not_configured"
     }
+
 
 if __name__ == "__main__":
     import uvicorn

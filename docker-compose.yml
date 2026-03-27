@@ -10,12 +10,14 @@ services:
       - REDIS_URL=redis://redis:6379
       - ENVIRONMENT=development
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     volumes:
       - ./backend:/app
     restart: unless-stopped
-  
+
   db:
     image: postgres:15
     environment:
@@ -27,7 +29,13 @@ services:
     ports:
       - "5432:5432"
     restart: unless-stopped
-  
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   redis:
     image: redis:7
     ports:
@@ -35,6 +43,11 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data:

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '@env';
 
 export const api = axios.create({
@@ -9,47 +10,55 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor for auth token
+// Request interceptor — attach stored auth token on every request
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    try {
+      const token = await SecureStore.getItemAsync('auth_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    } catch {
+      // SecureStore unavailable (e.g. simulator) — ignore
+    }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error),
 );
 
-// Response interceptor for error handling
+// Response interceptor — handle 401 globally
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized - redirect to login
+      // Clear stored token on unauthorized
+      SecureStore.deleteItemAsync('auth_token').catch(() => {});
     }
     return Promise.reject(error);
-  }
+  },
 );
 
-// API Service Functions
+// ── API Service Functions ───────────────────────────────────────────────────
+
 export const authAPI = {
-  login: (email: string, password: string) => 
+  login: (email: string, password: string) =>
     api.post('/auth/login', { username: email, password }),
-  register: (data: any) => 
+  register: (data: any) =>
     api.post('/auth/register', data),
-  getMe: () => 
+  getMe: () =>
     api.get('/auth/me'),
 };
 
 export const voucherAPI = {
-  list: (params?: any) => 
+  list: (params?: any) =>
     api.get('/vouchers', { params }),
-  get: (id: string) => 
+  get: (id: string) =>
     api.get(`/vouchers/${id}`),
-  create: (data: any) => 
+  create: (data: any) =>
     api.post('/vouchers', data),
-  update: (id: string, data: any) => 
+  update: (id: string, data: any) =>
     api.put(`/vouchers/${id}`, data),
-  delete: (id: string) => 
+  delete: (id: string) =>
     api.delete(`/vouchers/${id}`),
 };
 
@@ -61,11 +70,11 @@ export const reconciliationAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
-  get: (id: string) => 
+  get: (id: string) =>
     api.get(`/reconciliation/${id}`),
-  confirm: (id: string, matchIds: string[]) => 
+  confirm: (id: string, matchIds: string[]) =>
     api.post(`/reconciliation/${id}/confirm`, { match_ids: matchIds }),
-  certificate: (id: string) => 
+  certificate: (id: string) =>
     api.get(`/reconciliation/${id}/certificate`),
 };
 
@@ -90,47 +99,47 @@ export const invoiceAPI = {
 };
 
 export const messageAPI = {
-  parse: (message: string, source: string) => 
+  parse: (message: string, source: string) =>
     api.post('/messages/parse/sms', { message, source }),
 };
 
 export const partyAPI = {
-  list: () => 
+  list: () =>
     api.get('/parties'),
-  get: (id: string) => 
+  get: (id: string) =>
     api.get(`/parties/${id}`),
-  ledger: (id: string, params?: any) => 
+  ledger: (id: string, params?: any) =>
     api.get(`/parties/${id}/ledger`, { params }),
 };
 
 export const reportAPI = {
-  trialBalance: (params?: any) => 
+  trialBalance: (params?: any) =>
     api.get('/reports/trial-balance', { params }),
-  profitLoss: (params?: any) => 
+  profitLoss: (params?: any) =>
     api.get('/reports/profit-loss', { params }),
-  balanceSheet: (params?: any) => 
+  balanceSheet: (params?: any) =>
     api.get('/reports/balance-sheet', { params }),
-  outstanding: (params?: any) => 
+  outstanding: (params?: any) =>
     api.get('/reports/outstanding', { params }),
 };
 
 export const complianceAPI = {
-  calendar: () => 
+  calendar: () =>
     api.get('/compliance/calendar'),
-  gst2b: (params?: any) => 
+  gst2b: (params?: any) =>
     api.get('/compliance/gst-2b', { params }),
-  tds: (params?: any) => 
+  tds: (params?: any) =>
     api.get('/compliance/tds', { params }),
 };
 
 export const taxMindAPI = {
-  chat: (message: string, context?: any) => 
+  chat: (message: string, context?: any) =>
     api.post('/ai/chat', { message, context }),
 };
 
 export const connectorAPI = {
-  status: (companyId: string) => 
-    api.get(`/connector/status/${companyId}`),
-  sync: (companyId: string) => 
-    api.post(`/connector/sync/${companyId}`),
+  status: (companyId: string) =>
+    api.get(`/connectors/status/${companyId}`),
+  sync: (companyId: string) =>
+    api.post(`/connectors/sync/${companyId}`),
 };

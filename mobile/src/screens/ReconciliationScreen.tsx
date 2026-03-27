@@ -12,20 +12,25 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import { useUploadReconciliation } from '../hooks/useReconciliation';
 import { useNavigation } from '@react-navigation/native';
-import { partyAPI } from '../services/api';
+import { reconciliationAPI } from '../services/api';
 
 export default function ReconciliationScreen() {
   const navigation = useNavigation();
   const [selectedParty, setSelectedParty] = useState<any>(null);
   const [reconResult, setReconResult] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const uploadMutation = useUploadReconciliation();
 
   async function pickDocument() {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv'],
+        type: [
+          'application/pdf',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'text/csv',
+        ],
         copyToCacheDirectory: true,
       });
 
@@ -55,7 +60,7 @@ export default function ReconciliationScreen() {
           setIsUploading(false);
         }
       }
-    } catch (error: any) {
+    } catch {
       Alert.alert('Error', 'Failed to pick document');
     }
   }
@@ -88,7 +93,7 @@ export default function ReconciliationScreen() {
         <Text style={styles.title}>Reconciliation</Text>
         <TouchableOpacity
           style={styles.historyButton}
-          onPress={() => navigation.navigate('AuditTrail')}
+          onPress={() => navigation.navigate('AuditTrail' as never)}
         >
           <Ionicons name="time-outline" size={24} color="#2563EB" />
         </TouchableOpacity>
@@ -100,7 +105,9 @@ export default function ReconciliationScreen() {
           <Text style={styles.sectionTitle}>Select Party</Text>
           <TouchableOpacity
             style={styles.partySelector}
-            onPress={() => navigation.navigate('PartyList', { onSelect: setSelectedParty })}
+            onPress={() =>
+              navigation.navigate('PartyList' as never, { onSelect: setSelectedParty } as never)
+            }
           >
             <Text style={styles.partySelectorText}>
               {selectedParty?.name || 'Choose a party...'}
@@ -127,9 +134,7 @@ export default function ReconciliationScreen() {
                 </>
               )}
             </TouchableOpacity>
-            <Text style={styles.uploadHint}>
-              Supports PDF, Excel, CSV from any party
-            </Text>
+            <Text style={styles.uploadHint}>Supports PDF, Excel, CSV from any party</Text>
           </View>
         )}
 
@@ -161,13 +166,9 @@ export default function ReconciliationScreen() {
               <Text style={styles.sectionTitle}>Difference</Text>
               <View style={styles.differenceCard}>
                 <Text style={styles.differenceLabel}>Your Books</Text>
-                <Text style={styles.differenceValue}>
-                  ₹{reconResult.summary.your_balance}
-                </Text>
+                <Text style={styles.differenceValue}>₹{reconResult.summary.your_balance}</Text>
                 <Text style={styles.differenceLabel}>Party Books</Text>
-                <Text style={styles.differenceValue}>
-                  ₹{reconResult.summary.party_balance}
-                </Text>
+                <Text style={styles.differenceValue}>₹{reconResult.summary.party_balance}</Text>
                 <View style={styles.differenceDivider} />
                 <Text style={styles.differenceLabel}>Difference</Text>
                 <Text
@@ -190,27 +191,18 @@ export default function ReconciliationScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Actions</Text>
               <View style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={handleConfirmMatches}
-                >
+                <TouchableOpacity style={styles.actionButton} onPress={handleConfirmMatches}>
                   <Ionicons name="checkmark-circle-outline" size={20} color="#2563EB" />
                   <Text style={styles.actionButtonText}>Confirm Matches</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionButton, styles.queryButton]}
-                  onPress={() => {}}
-                >
+                <TouchableOpacity style={[styles.actionButton, styles.queryButton]}>
                   <Ionicons name="chatbubble-outline" size={20} color="#F59E0B" />
                   <Text style={[styles.actionButtonText, styles.queryButtonText]}>
                     Query Party
                   </Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={styles.certificateButton}
-                onPress={() => {}}
-              >
+              <TouchableOpacity style={styles.certificateButton}>
                 <Ionicons name="document-text-outline" size={20} color="#6B7280" />
                 <Text style={styles.certificateButtonText}>Generate Certificate</Text>
               </TouchableOpacity>
@@ -223,10 +215,7 @@ export default function ReconciliationScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -237,27 +226,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  historyButton: {
-    padding: 8,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-    marginBottom: 12,
-  },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#111827' },
+  historyButton: { padding: 8 },
+  content: { flex: 1, padding: 20 },
+  section: { marginBottom: 24 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 12 },
   partySelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -268,10 +241,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  partySelectorText: {
-    fontSize: 16,
-    color: '#111827',
-  },
+  partySelectorText: { fontSize: 16, color: '#111827' },
   uploadButton: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -281,21 +251,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 12,
   },
-  uploadButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  uploadHint: {
-    fontSize: 12,
-    color: '#6B7280',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
+  uploadButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  uploadHint: { fontSize: 12, color: '#6B7280', textAlign: 'center', marginTop: 8 },
+  summaryGrid: { flexDirection: 'row', gap: 12 },
   summaryCard: {
     flex: 1,
     backgroundColor: '#fff',
@@ -305,26 +263,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
-  matchedCard: {
-    borderColor: '#10B981',
-  },
-  fuzzyCard: {
-    borderColor: '#F59E0B',
-  },
-  missingCard: {
-    borderColor: '#EF4444',
-  },
-  summaryCount: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginTop: 8,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-  },
+  matchedCard: { borderColor: '#10B981' },
+  fuzzyCard: { borderColor: '#F59E0B' },
+  missingCard: { borderColor: '#EF4444' },
+  summaryCount: { fontSize: 28, fontWeight: 'bold', color: '#111827', marginTop: 8 },
+  summaryLabel: { fontSize: 12, color: '#6B7280', marginTop: 4 },
   differenceCard: {
     backgroundColor: '#fff',
     padding: 20,
@@ -333,27 +276,11 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
     gap: 12,
   },
-  differenceLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  differenceValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
-  },
-  differenceDivider: {
-    height: 1,
-    backgroundColor: '#E5E7EB',
-    marginVertical: 8,
-  },
-  differenceTotal: {
-    fontSize: 24,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
+  differenceLabel: { fontSize: 12, color: '#6B7280' },
+  differenceValue: { fontSize: 20, fontWeight: 'bold', color: '#111827' },
+  differenceDivider: { height: 1, backgroundColor: '#E5E7EB', marginVertical: 8 },
+  differenceTotal: { fontSize: 24 },
+  actionButtons: { flexDirection: 'row', gap: 12 },
   actionButton: {
     flex: 1,
     flexDirection: 'row',
@@ -366,17 +293,9 @@ const styles = StyleSheet.create({
     gap: 8,
     backgroundColor: '#fff',
   },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2563EB',
-  },
-  queryButton: {
-    borderColor: '#F59E0B',
-  },
-  queryButtonText: {
-    color: '#F59E0B',
-  },
+  actionButtonText: { fontSize: 14, fontWeight: '600', color: '#2563EB' },
+  queryButton: { borderColor: '#F59E0B' },
+  queryButtonText: { color: '#F59E0B' },
   certificateButton: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -389,9 +308,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     marginTop: 12,
   },
-  certificateButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
-  },
+  certificateButtonText: { fontSize: 14, fontWeight: '600', color: '#6B7280' },
 });

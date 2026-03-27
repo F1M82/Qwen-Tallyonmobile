@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 import { api } from '../services/api';
 
 interface User {
@@ -30,8 +30,8 @@ interface RegisterData {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const AUTH_TOKEN_KEY = '@taxmind:auth_token';
-const USER_DATA_KEY = '@taxmind:user_data';
+const AUTH_TOKEN_KEY = 'auth_token';
+const USER_DATA_KEY = 'user_data';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -43,14 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function loadStoredAuth() {
     try {
-      const [token, userData] = await AsyncStorage.multiGet([
-        AUTH_TOKEN_KEY,
-        USER_DATA_KEY,
-      ]);
+      const token = await SecureStore.getItemAsync(AUTH_TOKEN_KEY);
+      const userData = await SecureStore.getItemAsync(USER_DATA_KEY);
 
-      if (token[1] && userData[1]) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${token[1]}`;
-        setUser(JSON.parse(userData[1]));
+      if (token && userData) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        setUser(JSON.parse(userData));
       }
     } catch (error) {
       console.error('Error loading auth:', error);
@@ -61,17 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(email: string, password: string) {
     try {
-      const response = await api.post('/auth/login', {
-        username: email,
-        password,
-      });
-
+      const response = await api.post('/auth/login', { username: email, password });
       const { access_token } = response.data;
 
-      await AsyncStorage.multiSet([
-        [AUTH_TOKEN_KEY, access_token],
-        [USER_DATA_KEY, JSON.stringify(response.data.user)],
-      ]);
+      await SecureStore.setItemAsync(AUTH_TOKEN_KEY, access_token);
+      await SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(response.data.user));
 
       api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setUser(response.data.user);
@@ -82,8 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function register(data: RegisterData) {
     try {
-      const response = await api.post('/auth/register', data);
-      
+      await api.post('/auth/register', data);
       // Auto-login after registration
       await login(data.email, data.password);
     } catch (error: any) {
@@ -93,7 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     try {
-      await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, USER_DATA_KEY]);
+      await SecureStore.deleteItemAsync(AUTH_TOKEN_KEY);
+      await SecureStore.deleteItemAsync(USER_DATA_KEY);
       delete api.defaults.headers.common['Authorization'];
       setUser(null);
     } catch (error) {
@@ -105,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) {
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
-      AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(updatedUser));
+      SecureStore.setItemAsync(USER_DATA_KEY, JSON.stringify(updatedUser)).catch(() => {});
     }
   }
 
